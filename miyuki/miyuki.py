@@ -35,6 +35,8 @@ TIMEOUT = 10
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
 }
+session = requests.Session(impersonate='chrome120')
+MISSAV_REFERER = 'https://missav.ai/'
 
 banner = """
  ██████   ██████  ███                        █████       ███ 
@@ -93,10 +95,13 @@ def https_request_with_retry(request_url, retry, delay, timeout):
         inner_delay = int(delay)
     if timeout is not None:
         inner_timeout = int(timeout)
+    req_headers = dict(headers)
+    if 'surrit.com' in request_url:
+        req_headers['Referer'] = MISSAV_REFERER
     retries = 0
     while retries < inner_retry:
         try:
-            response = requests.get(url=request_url, headers=headers, timeout=inner_timeout, verify=False).content
+            response = session.get(url=request_url, headers=req_headers, timeout=inner_timeout, verify=False).content
             return response
         except Exception as e:
             # logging.error(f"Failed to fetch data (attempt {retries + 1}/{max_retries}): {e} url is: {request_url}")
@@ -238,7 +243,7 @@ def create_root_folder_if_not_exists(folder_name):
 
 
 def get_movie_uuid(url):
-    html = requests.get(url=url, headers=headers, verify=False).text
+    html = session.get(url=url, headers=headers, verify=False).text
 
     with open(TMP_HTML_FILE, "w", encoding="UTF-8") as file:
         file.write(html)
@@ -274,7 +279,7 @@ def write_error_to_text_file(url, e):
         file.write(f"Time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())} - URL: {url} - Error: {e}\n")
 
 def login_get_cookie(missav_user_info):
-    response = requests.post(url='https://missav.ws/api/login', data=missav_user_info, headers=headers, verify=False)
+    response = session.post(url='https://missav.ws/api/login', data=missav_user_info, headers=headers, verify=False)
     if response.status_code == 200:
         cookie_info = response.cookies.get_dict()
         if "user_uuid" in cookie_info:
@@ -357,7 +362,9 @@ def download(movie_url, download_action=True, write_action=True, ffmpeg_action=F
 
     playlist_url = video_m3u8_prefix + movie_uuid + video_playlist_suffix
 
-    playlist = requests.get(url=playlist_url, headers=headers, verify=False).text
+    surrit_headers = dict(headers)
+    surrit_headers['Referer'] = MISSAV_REFERER
+    playlist = session.get(url=playlist_url, headers=surrit_headers, verify=False).text
 
     final_quality, resolution_url = get_final_quality_and_resolution(playlist, quality)
 
@@ -368,7 +375,7 @@ def download(movie_url, download_action=True, write_action=True, ffmpeg_action=F
     video_m3u8_url = video_m3u8_prefix + movie_uuid + '/' + resolution_url
 
     # video.m3u8 records all jpeg video units of the video
-    video_m3u8 = requests.get(url=video_m3u8_url, headers=headers, verify=False).text
+    video_m3u8 = session.get(url=video_m3u8_url, headers=surrit_headers, verify=False).text
 
     # In the penultimate line of video.m3u8, find the maximum jpeg video unit number of the video
     video_offset_max_str = video_m3u8.splitlines()[-2]
@@ -392,7 +399,7 @@ def download(movie_url, download_action=True, write_action=True, ffmpeg_action=F
     if cover_action:
         try:
             cover_pic_url = f"https://fivetiu.com/{movie_name}/cover-n.jpg"
-            cover_pic = requests.get(url=cover_pic_url, headers=headers, verify=False).content
+            cover_pic = session.get(url=cover_pic_url, headers=headers, verify=False).content
             with open(movie_save_path_root + '/' + movie_name + '-cover.jpg', 'wb') as file:
                 file.write(cover_pic)
         except Exception as e:
@@ -531,7 +538,7 @@ def validate_args(args):
 
 def loop_fill_movie_urls_by_page(playlist_url, movie_url_list, limit, cookie):
     while playlist_url:
-        html_source = requests.get(url=playlist_url, headers=headers, verify=False, cookies=cookie).text
+        html_source = session.get(url=playlist_url, headers=headers, verify=False, cookies=cookie).text
         movie_url_matches = re.findall(pattern=href_regex_public_playlist, string=html_source)
         temp_url_list = list(set(movie_url_matches))
         for movie_url in temp_url_list:
@@ -564,7 +571,7 @@ def get_movie_collections(cookie):
 def get_movie_url_by_search(key):
     search_url = "https://missav.ws/search/" + key
     search_regex = r'<a href="([^"]+)" alt="' + key + '" >'
-    html_source = requests.get(url=search_url, headers=headers, verify=False).text
+    html_source = session.get(url=search_url, headers=headers, verify=False).text
     movie_url_matches = re.findall(pattern=search_regex, string=html_source)
     temp_url_list = list(set(movie_url_matches))
     if (len(temp_url_list) != 0):
