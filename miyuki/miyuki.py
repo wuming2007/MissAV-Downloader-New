@@ -19,7 +19,7 @@ FFMPEG_INPUT_FILE = 'ffmpeg_input_miyuki.txt'
 ERROR_RECORD_FILE = 'error_records_miyuki.txt'
 TMP_HTML_FILE = 'tmp_movie_miyuki.html'
 downloaded_urls = set()
-movie_save_path_root = 'movies_folder_miyuki'
+movie_save_path_root = os.path.join(os.path.expanduser('~'), 'Movies', 'miyuki')
 video_m3u8_prefix = 'https://surrit.com/'
 video_playlist_suffix = '/playlist.m3u8'
 href_regex_movie_collection = r'<a class="text-secondary group-hover:text-primary" href="([^"]+)" alt="'
@@ -101,7 +101,7 @@ def https_request_with_retry(request_url, retry, delay, timeout):
     retries = 0
     while retries < inner_retry:
         try:
-            response = session.get(url=request_url, headers=req_headers, timeout=inner_timeout, verify=False).content
+            response = requests.get(url=request_url, headers=req_headers, timeout=inner_timeout, verify=False, impersonate='chrome120').content
             return response
         except Exception as e:
             # logging.error(f"Failed to fetch data (attempt {retries + 1}/{max_retries}): {e} url is: {request_url}")
