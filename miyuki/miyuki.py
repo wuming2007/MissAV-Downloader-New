@@ -33,9 +33,9 @@ RETRY = 5
 DELAY = 2
 TIMEOUT = 10
 headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
 }
-session = requests.Session(impersonate='chrome120')
+session = requests.Session(impersonate='chrome131')
 MISSAV_REFERER = 'https://missav.ai/'
 
 banner = """
@@ -101,7 +101,7 @@ def https_request_with_retry(request_url, retry, delay, timeout):
     retries = 0
     while retries < inner_retry:
         try:
-            response = requests.get(url=request_url, headers=req_headers, timeout=inner_timeout, verify=False, impersonate='chrome120').content
+            response = requests.get(url=request_url, headers=req_headers, timeout=inner_timeout, verify=False, impersonate='chrome131').content
             return response
         except Exception as e:
             # logging.error(f"Failed to fetch data (attempt {retries + 1}/{max_retries}): {e} url is: {request_url}")
